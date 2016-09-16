@@ -5,11 +5,10 @@
 #include <sys/time.h>
 
 #include <netdb.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
 
-float makeRequest(char* url, char* port, int print);
+void makeRequest(int sockfd, char* url);
+struct addrinfo* buildAddrInfo(char* url, char* port);
+int makeAndConnectToSocket(struct addrinfo* servinfo);
 char* buildGETRequest(char* page, char* host);
-float getElapsedMilliseconds(struct timeval tm1, struct timeval tm2);
