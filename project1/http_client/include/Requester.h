@@ -11,4 +11,3 @@
 
 void makeRequest(char* url, char* port);
 char* buildGETRequest(char* page, char* host);
-struct hostent* getHostEnt(char* url);

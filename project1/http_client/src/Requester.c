@@ -1,7 +1,6 @@
 #include "Requester.h"
 
-#define HOST_BUFFER_LEN 256
-#define REQUEST_BUFFER_LEN 256
+#define RECV_BUF_SIZE 1024
 #define USER_AGENT_STR "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"
 
 void makeRequest(char* url, char* port) {
@@ -35,33 +34,43 @@ void makeRequest(char* url, char* port) {
     exit(1);
   }
 
-  char* req = buildGETRequest("http://google.com/index.html", "google.com");
+  //Build a request and send it the server
+  char* req = buildGETRequest(url, "");
   printf("requesting %s\n", req);
-  if (write(sockfd, req, sizeof(req)) <= 0) {
-    printf("Error in the write call!\n");
+  int send_res = send(sockfd, req, strlen(req), 0);
+  if(send_res < 0) {
+    printf("Error in send!\n");
+    exit(1);
   }
 
-  char recieved_buffer[2048];
-  while(1) {
-    bzero(recieved_buffer, sizeof(recieved_buffer));
+  char buf[RECV_BUF_SIZE];
 
-    int read = recv(sockfd, recieved_buffer, sizeof(recieved_buffer) - 2, 0);
-    printf("read\n");
-    if(read <= 0) {
-      printf("Bailing on read! %d\n", read);
-      break;
-    } else {
-      printf(".%s", recieved_buffer);
+  //Read from server into the buffer. Keep reading until
+  //the server closes the connection.
+  printf("----- FROM SERVER -----\n");
+  int recv_res = 0;
+  do {
+    //receive and output what we can fit
+    recv_res = recv(sockfd, buf, sizeof(buf), 0);
+    printf("%s", buf);
+    memset(buf, 0, sizeof(buf));
+
+    //Exit on error.
+    if(recv_res < 0) {
+      printf("Error in recv!\n");
+      exit(1);
     }
-  }
+  } while (recv_res > 0);
 
+  //Close everthing
+  close(sockfd);
   freeaddrinfo(servinfo);
 }
 
 char* buildGETRequest(char* page, char* host) {
   char* result_str = malloc(8 * 1024);
-  char* getBuilder = "GET /%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nAccept-Language: en-us,en\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n";
-  sprintf(result_str, getBuilder, page, host, USER_AGENT_STR);
+  char* getBuilder = "GET http://\%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nAccept-Language: en-us,en\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n";
+  sprintf(result_str, getBuilder, page, host, "");
 
   return result_str;
 }
