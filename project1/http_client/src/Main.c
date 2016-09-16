@@ -50,10 +50,12 @@ void doRTTTrials(char* url, char* port, int num_trials) {
     gettimeofday(&end_time, NULL);
     close(sockfd);
 
-    sum += getElapsedMilliseconds(start_time, end_time);
+    float elapsed = getElapsedMilliseconds(start_time, end_time);
+    printf("Trial %d \t%f milliseconds\n", i + 1, elapsed);
+    sum += elapsed;
   }
   float avg = sum / num_trials;
-  printf("Average RTT over %d trials: %f milliseconds\n", num_trials, avg);
+  printf("Average RTT over %d trials: %f milliseconds\n\n", num_trials, avg);
 
   freeaddrinfo(servinfo);
 }
@@ -65,6 +67,6 @@ float getElapsedMilliseconds(struct timeval tm1, struct timeval tm2) {
   long elapsed_useconds = tm2.tv_usec - tm1.tv_usec;
   float elapsed_secs_as_msec = elapsed_seconds * 1000;
   float elapsed_usecs_as_msec = elapsed_useconds / 1000;
-  
+
   return elapsed_secs_as_msec + elapsed_usecs_as_msec;
 }
