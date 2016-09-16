@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -24,6 +25,11 @@ int main(int argc, char** argv) {
   int print_rtt = argc == 4;
   char* request_url = print_rtt ? argv[2] : argv[1];
   char* port_number = print_rtt ? argv[3] : argv[2];
+
+  //Remove 'http://' from the url if it was added
+  if(strstr(request_url, "http://")) {
+    request_url = &request_url[7];
+  }
 
   //Print rtt results if -p was passed
   if(print_rtt) {
