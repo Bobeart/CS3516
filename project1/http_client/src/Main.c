@@ -3,6 +3,8 @@
 
 #include "Requester.h"
 
+#define NUM_RTT_TRIALS 10
+
 void onIncorrectArgs();
 
 int main(int argc, char** argv) {
@@ -17,11 +19,22 @@ int main(int argc, char** argv) {
   char* request_url = print_rtt ? argv[2] : argv[1];
   char* port_number = print_rtt ? argv[3] : argv[2];
 
-  printf("Requesting %s on port %s\n", request_url, port_number);
-  printf("Printing RTT: %s\n", print_rtt ? "true" : "false");
-
   //Make request
-  makeRequest(request_url, port_number);
+  if(print_rtt) {
+    printf("Finding RTT over %d trials...\n", NUM_RTT_TRIALS);
+
+    int i;
+    float sum = 0;
+    for(i = 0; i < NUM_RTT_TRIALS; i++) {
+      int rtt = makeRequest(request_url, port_number, 0);
+      sum += rtt;
+    }
+    float avg = sum / NUM_RTT_TRIALS;
+    printf("Average RTT over %d trials: %f milliseconds\n", NUM_RTT_TRIALS, avg);
+  }
+
+  printf("\n----- REQUESTING URL \"%s\" -----\n", request_url);
+  makeRequest(request_url, port_number, 1);
 
   return 0;
 }
