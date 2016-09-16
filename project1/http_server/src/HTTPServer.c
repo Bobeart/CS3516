@@ -17,9 +17,25 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+
+#include <signal.h>
+
 #include "ServerSocketWrapper.h"
 
+int sockfd;
+int connfd;
+
 int main(int argc, char** argv) {
+  //Catch SIGINT (adapted from: http://beej.us/guide/bgipc/output/html/multipage/signals.html)
+  void sigint_handler(int sig); /* prototype */
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sa.sa_flags = 0; // or SA_RESTART
+  sigemptyset(&sa.sa_mask);
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    perror("sigaction");
+    exit(1);
+  }
 
   //Check arguments
   if(argc != 2) {
@@ -30,34 +46,50 @@ int main(int argc, char** argv) {
 
   char* port_number = argv[1];
 
+  //Build and hold onto our main socket
   struct addrinfo* servinfo = buildAddrInfo(port_number);
-  int sockfd = startUpSocket(servinfo);
+  sockfd = startUpSocket(servinfo);
 
+  //Main server loop
   while(1) {
+    //Wait to accept a connection
     struct sockaddr_storage their_addr;
     socklen_t addr_size = sizeof(their_addr);
-    int newfd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
-    if(newfd < 0) {
+    connfd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
+    if(connfd < 0) {
       printf("Could not accept!\n");
     }
 
-    char* received_request = receiveFrom(newfd);
+    //Pull in a request with recv, print it
+    char* received_request = receiveFrom(connfd);
     printf("Received request:\n%s\n\n", received_request);
 
+    //Parse the url for the requested file.
     strtok(received_request, " "); //Split on space
     char* url = strtok(NULL, " ");
-    char* file_path = url;
-    int filefd = open(&strrchr(file_path, '/')[1], O_RDONLY, S_IREAD | S_IWRITE);
+    char* file_path = &strrchr(url, '/')[1]; //Start after the last '/' in the URL
 
+    //Open the file. Send it if found, 404 if not found.
+    int filefd = open(file_path, O_RDONLY, S_IREAD | S_IWRITE);
     if(filefd < 0) {
       printf("Requested file \"%s\" was not found!\n", file_path);
-      send404(newfd);
+      send404(connfd);
     } else {
       printf("Found file \"%s\", sending...\n", file_path);
-      sendFile(newfd, filefd);
+      sendFile(connfd, filefd);
     }
 
-    close(newfd);
+    //Close the connection so we can wait for another
+    close(connfd);
   }
   return 0;
+}
+
+//Handle control+C, close any open sockets
+void sigint_handler(int sig)
+{
+    printf("\nExiting server\n");
+    close(sockfd);
+    close(connfd);
+    exit(0);
 }
