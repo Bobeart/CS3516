@@ -1,8 +1,61 @@
+// William Hartman
+// CS3516 Project 1
+
 #include "Requester.h"
 
 #define RECV_BUF_SIZE 1024
 #define USER_AGENT_STR "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"
 
+// A more convenient way to get an addrinfo struct out of a URL/Port number
+struct addrinfo* buildAddrInfo(char* url, char* port) {
+  struct addrinfo hints;
+  struct addrinfo *servinfo;
+  memset(&hints, 0, sizeof hints);
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
+
+  char* host_name = makeHostFromURL(url);
+  if (getaddrinfo(host_name, port, &hints, &servinfo) != 0) {
+    printf("getaddrinsfo failed!\n");
+    exit(1);
+  }
+  free(host_name);
+
+  return servinfo;
+}
+
+// A quick and dirty way of finding the host name from a complete URL.
+// This just takes the part before the first slash as the host name.
+// This means the urls with 'http://' don't work.
+char* makeHostFromURL(char* url) {
+  int host_name_len = strcspn(url, "/");
+  char* host_name = malloc(host_name_len);
+  strncpy(host_name, url, host_name_len);
+
+  return host_name;
+}
+
+// A convenient way to build a socket and connect to it.
+// Return value is the socket file descriptor
+int makeAndConnectToSocket(struct addrinfo* servinfo) {
+  //Make a socket
+  int sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+  if (sockfd < 0) {
+    printf("Could not open a socket!\n");
+    exit(1);
+  }
+
+  //Connect the socket
+  int conn_status = connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
+  if (conn_status < 0){
+    printf("Could not connect to the server!\n");
+    exit(1);
+  }
+
+  return sockfd;
+}
+
+// Make a request to the given url to the socket. All output is printed
 void printRequestResponse(int sockfd, char* url) {
   //Build a request
   char* host_name = makeHostFromURL(url);
@@ -38,52 +91,13 @@ void printRequestResponse(int sockfd, char* url) {
   printf("\n----- END RESPONSE -----\n");
 }
 
-struct addrinfo* buildAddrInfo(char* url, char* port) {
-  struct addrinfo hints;
-  struct addrinfo *servinfo;
-  memset(&hints, 0, sizeof hints);
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-
-  char* host_name = makeHostFromURL(url);
-  if (getaddrinfo(host_name, port, &hints, &servinfo) != 0) {
-    printf("getaddrinsfo failed!\n");
-    exit(1);
-  }
-  free(host_name);
-
-  return servinfo;
-}
-
-char* makeHostFromURL(char* url) {
-  int host_name_len = strcspn(url, "/");
-  char* host_name = malloc(host_name_len);
-  strncpy(host_name, url, host_name_len);
-
-  return host_name;
-}
-
-int makeAndConnectToSocket(struct addrinfo* servinfo) {
-  //Make a socket
-  int sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-  if (sockfd < 0) {
-    printf("Could not open a socket!\n");
-    exit(1);
-  }
-
-  //Connect the socket
-  int conn_status = connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
-  if (conn_status < 0){
-    printf("Could not connect to the server!\n");
-    exit(1);
-  }
-
-  return sockfd;
-}
-
+// Build a get request from a URL and host using a premade format string.
 char* buildGETRequest(char* page, char* host) {
-  char* result_str = malloc(8 * 1024);
+  char* result_str = malloc(2048);
+  //Giant format string adapted from HTTP requests I looked at
   char* getBuilder = "GET http://\%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nAccept-Language: en-us,en\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n";
+
+  //Insert proper values into format string
   sprintf(result_str, getBuilder, page, host, USER_AGENT_STR);
 
   return result_str;

@@ -1,3 +1,6 @@
+// William Hartman
+// CS3516 Project 1
+
 #include "Main.h"
 
 int main(int argc, char** argv) {
@@ -60,9 +63,8 @@ void doRTTTrials(char* url, char* port, int num_trials) {
 float getElapsedMilliseconds(struct timeval tm1, struct timeval tm2) {
   long elapsed_seconds = tm2.tv_sec - tm1.tv_sec;
   long elapsed_useconds = tm2.tv_usec - tm1.tv_usec;
-
   float elapsed_secs_as_msec = elapsed_seconds * 1000;
   float elapsed_usecs_as_msec = elapsed_useconds / 1000;
-
+  
   return elapsed_secs_as_msec + elapsed_usecs_as_msec;
 }
