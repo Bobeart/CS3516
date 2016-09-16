@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -23,7 +24,7 @@ struct addrinfo* buildAddrInfo(char* url, char* port) {
 
   char* host_name = makeHostFromURL(url);
   if (getaddrinfo(host_name, port, &hints, &servinfo) != 0) {
-    printf("getaddrinsfo failed!\n");
+    printf("getaddrinsfo failed! errno: %d\n", errno);
     exit(1);
   }
   free(host_name);
@@ -48,14 +49,14 @@ int makeAndConnectToSocket(struct addrinfo* servinfo) {
   //Make a socket
   int sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
   if (sockfd < 0) {
-    printf("Could not open a socket!\n");
+    printf("Could not open a socket! errno: %d\n", errno);
     exit(1);
   }
 
   //Connect the socket
   int conn_status = connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
   if (conn_status < 0){
-    printf("Could not connect to the server!\n");
+    printf("Could not connect to the server! errno: %d\n", errno);
     exit(1);
   }
 
@@ -73,7 +74,7 @@ void printRequestResponse(int sockfd, char* url) {
   printf("----- REQUESTING -----\n%s\n", req);
   int send_res = send(sockfd, req, strlen(req), 0);
   if(send_res < 0) {
-    printf("Error in send!\n");
+    printf("Error in send! errno: %d\n", errno);
     exit(1);
   }
 
@@ -96,7 +97,7 @@ void printRequestResponse(int sockfd, char* url) {
 
     //Exit on error.
     if(recv_res < 0) {
-      printf("Error in recv!\n");
+      printf("Error in recv! errno: %d\n", errno);
       exit(1);
     }
   } while (recv_res > 0);

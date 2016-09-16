@@ -4,18 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <errno.h>
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <netdb.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include "ServerSocketWrapper.h"
 
@@ -34,7 +25,7 @@ struct addrinfo* buildAddrInfo(char* port) {
   hints.ai_flags = AI_PASSIVE;
 
   if (getaddrinfo(NULL, port, &hints, &servinfo) != 0) {
-    printf("getaddrinsfo failed!\n");
+    printf("getaddrinsfo failed! errno: %d\n", errno);
     exit(1);
   }
 
@@ -46,7 +37,7 @@ int startUpSocket(struct addrinfo* servinfo) {
   //Make a socket
   int sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
   if (sockfd < 0) {
-    printf("Could not open a socket!\n");
+    printf("Could not open a socket! errno: %d\n", errno);
     exit(1);
   }
 
@@ -60,7 +51,7 @@ int startUpSocket(struct addrinfo* servinfo) {
   //Listen
   int listen_status = listen(sockfd, SOCKET_BACKLOG);
   if(listen_status < 0) {
-    printf("Could not listen to socket!\n");
+    printf("Could not listen to socket! errno: %d\n", errno);
     exit(1);
   }
 
@@ -76,15 +67,34 @@ char* receiveFrom(int sockfd) {
     printf("Error in recv!\n");
     exit(1);
   }
+  buf[recv_res] = '\0'; //End with null so that things print right
 
   return buf;
 }
 
-void sendFile(int sockfd, int filefd) {
+void sendFile(int sockfd, int filefd, char* file_path) {
   char buf[FILE_BUF_SIZE];
+
+  //Use the right HTML type
+  if(strstr(file_path, ".jpg") != NULL ||
+    strstr(file_path, ".jpeg") != NULL ||
+    strstr(file_path, ".gif") != NULL ||
+    strstr(file_path, ".png") != NULL) {
+      strcpy(buf, "HTTP/1.0 200 OK\nContent-Type:text/jpeg\n\n");
+  }
+  else if(strstr(file_path, ".html") != NULL) {
+      strcpy(buf, "HTTP/1.0 200 OK\nContent-Type:text/jpeg\n\n");
+  }
+  else {
+    printf("Unknown type \"%s\", exiting\n", file_path);
+    exit(1);
+  }
+
+  //Send HTTP headers
   strcpy(buf, "HTTP/1.0 200 OK\nContent-Type:text/html\n\n");
   send(sockfd, buf, strlen(buf), 0);
 
+  //Send the file
   int bytes_read = 0;
   do {
     bytes_read = read(filefd, buf, FILE_BUF_SIZE);

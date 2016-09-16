@@ -4,24 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <netdb.h>
-
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
-
 #include <sys/stat.h>
 #include <fcntl.h>
-
-
 #include <signal.h>
 
 #include "ServerSocketWrapper.h"
 
+//Global declartions of socket file descriptors so we can close them on SIGINT
 int sockfd;
 int connfd;
 
@@ -67,7 +58,8 @@ int main(int argc, char** argv) {
     //Parse the url for the requested file.
     strtok(received_request, " "); //Split on space
     char* url = strtok(NULL, " ");
-    char* file_path = &strrchr(url, '/')[1]; //Start after the last '/' in the URL
+    //Want to start path after the third '/' (due to http://abc.xyz/)
+    char* file_path = &strrchr(strrchr(strrchr(url, '/'), '/'), '/')[1];
 
     //Open the file. Send it if found, 404 if not found.
     int filefd = open(file_path, O_RDONLY, S_IREAD | S_IWRITE);
@@ -76,16 +68,17 @@ int main(int argc, char** argv) {
       send404(connfd);
     } else {
       printf("Found file \"%s\", sending...\n", file_path);
-      sendFile(connfd, filefd);
+      sendFile(connfd, filefd, file_path);
     }
 
-    //Close the connection so we can wait for another
+    //Close the connection, free stuff, so we can loop safely
+    free(received_request);
     close(connfd);
   }
   return 0;
 }
 
-//Handle control+C, close any open sockets
+//Handle Control+C, close any open sockets
 void sigint_handler(int sig)
 {
     printf("\nExiting server\n");
