@@ -85,8 +85,13 @@ void printRequestResponse(int sockfd, char* url) {
   do {
     //receive and output what we can fit
     recv_res = recv(sockfd, buf, RECV_BUF_SIZE, 0);
-    printf("%s", buf);
 
+    //Print the result (extra stuff to not print garbage memory locs)
+    char printable_res[RECV_BUF_SIZE];
+    strncpy(printable_res, buf, recv_res);
+    printf("%s", printable_res);
+
+    //Zero out buffer to ready it for the next round
     memset(buf, 0, sizeof(buf));
 
     //Exit on error.
