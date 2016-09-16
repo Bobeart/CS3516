@@ -1,7 +1,14 @@
 // William Hartman
 // CS3516 Project 1
 
-#include "Requester.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+#include "SocketWrapper.h"
 
 #define RECV_BUF_SIZE 1024
 #define USER_AGENT_STR "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"

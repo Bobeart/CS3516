@@ -1,7 +1,14 @@
 // William Hartman
 // CS3516 Project 1
 
-#include "Main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <netdb.h>
+
+#include "HTTPClient.h"
+#include "SocketWrapper.h"
 
 int main(int argc, char** argv) {
   //Exit if args are incorrect
