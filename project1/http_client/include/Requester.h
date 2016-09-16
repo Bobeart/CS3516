@@ -8,7 +8,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-void makeRequest(int sockfd, char* url);
+void printRequestResponse(int sockfd, char* url);
+char* makeHostFromURL(char* url);
 struct addrinfo* buildAddrInfo(char* url, char* port);
 int makeAndConnectToSocket(struct addrinfo* servinfo);
 char* buildGETRequest(char* page, char* host);

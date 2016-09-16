@@ -3,10 +3,14 @@
 #define RECV_BUF_SIZE 1024
 #define USER_AGENT_STR "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"
 
-void makeRequest(int sockfd, char* url) {
-  //Build a request and send it the server
-  char* req = buildGETRequest(url, "");
-  printf("requesting %s\n", req);
+void printRequestResponse(int sockfd, char* url) {
+  //Build a request
+  char* host_name = makeHostFromURL(url);
+  char* req = buildGETRequest(url, host_name);
+  free(host_name);
+
+  //Send the request to the server
+  printf("----- REQUESTING -----\n%s\n", req);
   int send_res = send(sockfd, req, strlen(req), 0);
   if(send_res < 0) {
     printf("Error in send!\n");
@@ -31,6 +35,7 @@ void makeRequest(int sockfd, char* url) {
       exit(1);
     }
   } while (recv_res > 0);
+  printf("\n----- END RESPONSE -----\n");
 }
 
 struct addrinfo* buildAddrInfo(char* url, char* port) {
@@ -39,12 +44,23 @@ struct addrinfo* buildAddrInfo(char* url, char* port) {
   memset(&hints, 0, sizeof hints);
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
-  if (getaddrinfo(url, port, &hints, &servinfo) != 0) {
+
+  char* host_name = makeHostFromURL(url);
+  if (getaddrinfo(host_name, port, &hints, &servinfo) != 0) {
     printf("getaddrinsfo failed!\n");
     exit(1);
   }
+  free(host_name);
 
   return servinfo;
+}
+
+char* makeHostFromURL(char* url) {
+  int host_name_len = strcspn(url, "/");
+  char* host_name = malloc(host_name_len);
+  strncpy(host_name, url, host_name_len);
+
+  return host_name;
 }
 
 int makeAndConnectToSocket(struct addrinfo* servinfo) {
@@ -68,7 +84,7 @@ int makeAndConnectToSocket(struct addrinfo* servinfo) {
 char* buildGETRequest(char* page, char* host) {
   char* result_str = malloc(8 * 1024);
   char* getBuilder = "GET http://\%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nAccept-Language: en-us,en\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n";
-  sprintf(result_str, getBuilder, page, host, "");
+  sprintf(result_str, getBuilder, page, host, USER_AGENT_STR);
 
   return result_str;
 }

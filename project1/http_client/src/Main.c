@@ -21,10 +21,9 @@ int main(int argc, char** argv) {
   }
 
   //Make a request and print the result
-  printf("\n----- REQUESTING URL \"%s\" -----\n", request_url);
   struct addrinfo* servinfo = buildAddrInfo(request_url, port_number);
   int sockfd = makeAndConnectToSocket(servinfo);
-  makeRequest(sockfd, request_url);
+  printRequestResponse(sockfd, request_url);
   close(sockfd);
   freeaddrinfo(servinfo);
 
@@ -57,7 +56,7 @@ void doRTTTrials(char* url, char* port, int num_trials) {
 }
 
 // Convenience function to find the difference in milliseconds between
-// two timval structs
+// two timeval structs
 float getElapsedMilliseconds(struct timeval tm1, struct timeval tm2) {
   long elapsed_seconds = tm2.tv_sec - tm1.tv_sec;
   long elapsed_useconds = tm2.tv_usec - tm1.tv_usec;
