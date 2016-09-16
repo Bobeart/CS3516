@@ -3,5 +3,6 @@
 
 struct addrinfo* buildAddrInfo(char* port);
 int startUpSocket(struct addrinfo* servinfo);
-void sendFile(int sockfd, char* file_name);
+char* receiveFrom(int sockfd);
+void sendFile(int sockfd, int filefd);
 void send404(int sockfd);

@@ -8,10 +8,21 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <errno.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "ServerSocketWrapper.h"
 
 #define SOCKET_BACKLOG 5
+#define RECEIVE_BUF_SIZE 512 // This is for receiving get requests, so a
+                             // smaller value here should be reasonable
+#define FILE_BUF_SIZE 1024
 
 // A more convenient way to get an addrinfo struct out of a Port number
 struct addrinfo* buildAddrInfo(char* port) {
@@ -42,7 +53,7 @@ int startUpSocket(struct addrinfo* servinfo) {
   //Bind to the socket
   int bind_status = bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
   if(bind_status < 0) {
-    printf("Could not bind socket!\n");
+    printf("Could not bind socket! errno: %d\n", errno);
     exit(1);
   }
 
@@ -56,8 +67,32 @@ int startUpSocket(struct addrinfo* servinfo) {
   return sockfd;
 }
 
-void sendFile(int sockfd, char* file_name) {
+char* receiveFrom(int sockfd) {
+  char* buf = malloc(RECEIVE_BUF_SIZE);
 
+  //receive and output what we can fit
+  int recv_res = recv(sockfd, buf, RECEIVE_BUF_SIZE, 0);
+  if(recv_res < 0) {
+    printf("Error in recv!\n");
+    exit(1);
+  }
+
+  return buf;
+}
+
+void sendFile(int sockfd, int filefd) {
+  char buf[FILE_BUF_SIZE];
+  strcpy(buf, "HTTP/1.0 200 OK\nContent-Type:text/html\n\n");
+  send(sockfd, buf, strlen(buf), 0);
+
+  int bytes_read = 0;
+  do {
+    bytes_read = read(filefd, buf, FILE_BUF_SIZE);
+    if(bytes_read > 0) {
+      send(sockfd, buf, bytes_read, 0);
+    }
+  } while(bytes_read > 0);
+  send(sockfd, "\r\n\r\n", 4, 0);
 }
 
 void send404(int sockfd) {
