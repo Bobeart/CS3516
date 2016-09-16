@@ -1,0 +1,25 @@
+William Hartman
+wahartman@wpi.edu
+
+9/16/16 - CS3516 - Networks - Project 1
+
+After running './http_client -p www.google.com 80'
+Output relating to RTT was:
+
+Finding RTT over 10 trials...
+Trial 1 	91.000000 milliseconds
+Trial 2 	79.000000 milliseconds
+Trial 3 	71.000000 milliseconds
+Trial 4 	70.000000 milliseconds
+Trial 5 	78.000000 milliseconds
+Trial 6 	91.000000 milliseconds
+Trial 7 	109.000000 milliseconds
+Trial 8 	73.000000 milliseconds
+Trial 9 	85.000000 milliseconds
+Trial 10 	77.000000 milliseconds
+Average RTT over 10 trials: 82.400002 milliseconds
+
+
+######################################
+# REST OF OUTPUT OMITTED FOR BREVITY #
+######################################
