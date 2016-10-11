@@ -49,6 +49,8 @@ makefile, so any reasonably modern compiler should be fine. This project was
 tested with clang (on my own computer), gcc 6.2.1 (on my own computer), and
 gcc 4.1.2 (on the CCC machines).
 
+Run 'make clean' to delete the executable and all build files.
+
 
 
 
