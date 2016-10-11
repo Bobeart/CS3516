@@ -12,7 +12,8 @@ struct distance_table dt0;
 struct NeighborCosts* neighbor0;
 
 //Forward declaration
-void printdt0( int MyNodeNumber, struct NeighborCosts *neighbor, struct distance_table *dtptr);
+void printdt0(int MyNodeNumber, struct NeighborCosts *neighbor, struct distance_table *dtptr);
+void sendUpdates(int self, int init_costs[], struct distance_table dt, struct NeighborCosts* neighbor);
 
 //Initalize the table
 void rtinit0() {
@@ -41,18 +42,64 @@ void rtinit0() {
   print_func(self_index, neighbor, &dt);
 
   //Send to rest of network
+  sendUpdates(self_index, init_costs, dt, neighbor);
+
+  //Specified output
+  printf("At time t=%f, rtinit%d() called.\n", clocktime, self_index);
+}
+
+void rtupdate0( struct RoutePacket *rcvdpkt ) {
+  //Convenience for copy/paste between nodeN.c files
+  int self_index = 0;
+  struct distance_table dt = dt0;
+  struct NeighborCosts* neighbor = neighbor0;
+  void (*print_func)(int, struct NeighborCosts*, struct distance_table*) = printdt0;
+
+  int rcvd_sourceid = rcvdpkt->sourceid;
+  int updates = NO;
+
+  for(int i = 0; i < MAX_NODES; i++) {
+    //Skip self (this should not happen anyway)
+    if(i == self_index) {
+      continue;
+    }
+
+    //Check for a new minimum
+    int current_cost = dt.costs[rcvd_sourceid][rcvd_sourceid] + rcvdpkt->mincost[i];
+    int old_cost = dt.costs[i][rcvd_sourceid];
+    if(current_cost < old_cost) {
+      dt.costs[i][rcvd_sourceid] = current_cost;
+      updates = YES;
+    }
+  }
+
+  if(updates == YES) {
+    print_func(self_index, neighbor, &dt);
+
+    int init_costs[MAX_NODES];
+    for(int i = 0; i < neighbor->NodesInNetwork; i++) {
+      init_costs[i] = neighbor->NodeCosts[i];
+    }
+    sendUpdates(self_index, init_costs, dt, neighbor);
+  }
+
+  //Specified output
+  printf("At time t=%f, rtupdate%d() called.\n", clocktime, self_index);
+}
+
+void sendUpdates(int self, int init_costs[], struct distance_table dt, struct NeighborCosts* neighbor) {
   for(int i = 0; i < neighbor->NodesInNetwork; i++) {
     //Skip self, nodes that are not connected
-    if(i == self_index || init_costs[i] == INFINITY) {
+    if(i == self || init_costs[i] == INFINITY) {
       continue;
     }
 
     //Specified output
-    printf("At time t=%f, node %d sends packet to node %d with:", clocktime, self_index, i);
+    printf("At time t=%f, node %d sends packet to node %d with:", clocktime, self, i);
 
     //Make the packet
     struct RoutePacket* packet = malloc(sizeof(struct RoutePacket));
-    packet->sourceid = self_index;
+    packet->sourceid = self;
     packet->destid = i;
 
     //Find the min distance for each node
@@ -72,16 +119,7 @@ void rtinit0() {
     //send packet
     toLayer2(*packet);
   }
-
-  //Specified output
-  printf("At time t=%f, rtinit%d() called.\n", clocktime, self_index);
 }
-
-
-void rtupdate0( struct RoutePacket *rcvdpkt ) {
-
-}
-
 
 /////////////////////////////////////////////////////////////////////
 //  printdt
