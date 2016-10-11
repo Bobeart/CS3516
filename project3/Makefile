@@ -3,7 +3,7 @@
 CC := gcc
 SRCDIR := src
 BUILDDIR := build
-TARGET := proj3
+TARGET := p3
 
 SRCEXT := c
 SOURCES := $(shell find $(SRCDIR) -type f -name "*.$(SRCEXT)")
