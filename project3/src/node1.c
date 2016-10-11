@@ -19,14 +19,14 @@ void sendUpdates(int self, int init_costs[], struct distance_table dt, struct Ne
 void rtinit1() {
   //Convenience for copy/paste between nodeN.c files
   int self_index = 1;
-  struct distance_table dt = dt1;
+  struct distance_table* dt = &dt1;
   struct NeighborCosts* neighbor = neighbor1;
   void (*print_func)(int, struct NeighborCosts*, struct distance_table*) = printdt1;
 
   //Initialize to INFINITY
   for(int i = 0; i < MAX_NODES; i++) {
     for(int j = 0; j < MAX_NODES; j++) {
-      dt.costs[i][j] = INFINITY;
+      dt->costs[i][j] = INFINITY;
     }
   }
 
@@ -34,15 +34,15 @@ void rtinit1() {
   int init_costs[MAX_NODES];
   neighbor = getNeighborCosts(self_index);
   for(int i = 0; i < neighbor->NodesInNetwork; i++) {
-    dt.costs[i][i] = neighbor->NodeCosts[i];
+    dt->costs[i][i] = neighbor->NodeCosts[i];
     init_costs[i] = neighbor->NodeCosts[i];
   }
 
   //Print the current costs table
-  print_func(self_index, neighbor, &dt);
+  print_func(self_index, neighbor, dt);
 
   //Send to rest of network
-  sendUpdates(self_index, init_costs, dt, neighbor);
+  sendUpdates(self_index, init_costs, *dt, neighbor);
 
   //Specified output
   printf("At time t=%f, rtinit%d() called.\n", clocktime, self_index);
@@ -51,7 +51,7 @@ void rtinit1() {
 void rtupdate1( struct RoutePacket *rcvdpkt ) {
   //Convenience for copy/paste between nodeN.c files
   int self_index = 1;
-  struct distance_table dt = dt1;
+  struct distance_table* dt = &dt1;
   struct NeighborCosts* neighbor = neighbor1;
   void (*print_func)(int, struct NeighborCosts*, struct distance_table*) = printdt1;
 
@@ -59,28 +59,24 @@ void rtupdate1( struct RoutePacket *rcvdpkt ) {
   int updates = NO;
 
   for(int i = 0; i < MAX_NODES; i++) {
-    //Skip self (this should not happen anyway)
-    if(i == self_index) {
-      continue;
-    }
-
     //Check for a new minimum
-    int current_cost = dt.costs[rcvd_sourceid][rcvd_sourceid] + rcvdpkt->mincost[i];
-    int old_cost = dt.costs[i][rcvd_sourceid];
+    int current_cost = dt->costs[rcvd_sourceid][rcvd_sourceid] + rcvdpkt->mincost[i];
+    int old_cost = dt->costs[i][rcvd_sourceid];
     if(current_cost < old_cost) {
-      dt.costs[i][rcvd_sourceid] = current_cost;
+      dt->costs[i][rcvd_sourceid] = current_cost;
       updates = YES;
     }
   }
 
   if(updates == YES) {
-    print_func(self_index, neighbor, &dt);
+    neighbor = getNeighborCosts(self_index);
+    print_func(self_index, neighbor, dt);
 
     int init_costs[MAX_NODES];
     for(int i = 0; i < neighbor->NodesInNetwork; i++) {
       init_costs[i] = neighbor->NodeCosts[i];
     }
-    sendUpdates(self_index, init_costs, dt, neighbor);
+    sendUpdates(self_index, init_costs, *dt, neighbor);
   }
 
   //Specified output
