@@ -44,9 +44,10 @@ run make          - 'make'
 run project 3     - './p3 1' - the '1' can be replaced with the desired trace
                                level number
 
-Any reasonably modern compiler should be fine. This project was tested with
-clang (on my own computer), gcc 6.2.1 (on my own computer), and gcc 4.1.2
-(on the CCC machine).
+The compiler being used must support C99. The standard is specified in the
+makefile, so any reasonably modern compiler should be fine. This project was
+tested with clang (on my own computer), gcc 6.2.1 (on my own computer), and
+gcc 4.1.2 (on the CCC machines).
 
 
 
